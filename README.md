@@ -20,7 +20,7 @@ The agent knows the companion pane as "the slice" — so you can say things like
 ## Install
 
 ```bash
-pi install dangayle/pi-slice
+pi install https://github.com/dangayle/pi-slice
 ```
 
 ## Usage
