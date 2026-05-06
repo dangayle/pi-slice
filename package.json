@@ -1,0 +1,16 @@
+{
+  "name": "pi-slice",
+  "version": "0.1.0",
+  "description": "Auto-split terminal on pi start with pane read/write control. Supports tmux, zellij, and iTerm2.",
+  "keywords": ["pi-package"],
+  "author": "dangayle",
+  "license": "MIT",
+  "pi": {
+    "extensions": ["./extensions/split"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
