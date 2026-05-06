@@ -91,8 +91,9 @@ export default function (pi: ExtensionAPI) {
     description:
       "Read the last N lines of output from the companion terminal pane. " +
       "Use this to see command output, logs, or server status in the other pane.",
-    promptSnippet: "Read output from the companion terminal pane",
+    promptSnippet: "Read output from the companion terminal pane (the 'slice')",
     promptGuidelines: [
+      "pi-slice provides a companion terminal pane (aka 'the slice', 'the pane', 'the other pane', 'the terminal'). When the user refers to running something 'in the slice', 'in the pane', or 'in the terminal', use pane_exec and pane_read.",
       "Use pane_read to check the companion pane's output (e.g. dev server logs, test results).",
       "Use pane_read after pane_exec to see the result of a command sent to the companion pane.",
     ],
@@ -140,7 +141,7 @@ export default function (pi: ExtensionAPI) {
       "Send a command to the companion terminal pane (like typing it and pressing Enter). " +
       "Use this to run dev servers, tests, or any command in the companion shell. " +
       "The command runs in the companion pane's current directory.",
-    promptSnippet: "Send a command to the companion terminal pane",
+    promptSnippet: "Send a command to the companion terminal pane (the 'slice')",
     promptGuidelines: [
       "Use pane_exec to run long-lived processes (dev servers, watchers) in the companion pane instead of bash.",
       "After pane_exec, use pane_read to check the output if needed.",
