@@ -1,33 +1,36 @@
 # pi-slice 🍕
 
-Auto-split your terminal when [pi](https://github.com/mariozechner/pi-coding-agent) starts, giving the agent a companion pane it can read from and write to.
+A [pi](https://github.com/mariozechner/pi-coding-agent) package that auto-splits your terminal when pi starts, so you don't have to manually open a second pane every time you need a dev server, file watcher, or anything else running alongside pi.
+
+If you're like me, you're always splitting your iTerm window vertically to run `vite dev` or `next dev` with HMR while working in pi. pi-slice does that automatically and gives the agent tools to interact with it.
 
 Supports **tmux**, **zellij**, and **iTerm2**.
 
 ## What it does
 
-When pi launches, pi-slice splits your terminal vertically and exposes two tools to the agent:
+On startup, pi-slice splits your terminal vertically and registers two tools:
 
 | Tool | Description |
 |------|-------------|
-| `pane_exec` | Send a command to the companion pane (runs it like typing + Enter) |
+| `pane_exec` | Send a command to the companion pane (like typing + Enter) |
 | `pane_read` | Read the last N lines of output from the companion pane |
 
-This lets the agent run dev servers, watch logs, execute tests, and read their output — all without blocking the main conversation.
+The agent knows the companion pane as "the slice" — so you can say things like _"start the dev server in the slice"_ or _"check the slice for errors"_ and it just works.
 
 ## Install
 
 ```bash
-pi package install dangayle/pi-slice
+pi install dangayle/pi-slice
 ```
 
-Or add it manually to your pi config:
+## Usage
 
-```json
-{
-  "packages": ["dangayle/pi-slice"]
-}
-```
+pi-slice splits automatically when pi starts. No setup needed.
+
+You can also control it manually:
+
+- `/split` — reopen the companion pane if closed
+- `/unsplit` — close it
 
 ## Terminal support
 
@@ -37,7 +40,7 @@ Or add it manually to your pi config:
 | **zellij** | `action new-pane`, `action write`, `action dump-screen` |
 | **iTerm2** | AppleScript (`split vertically with default profile`) |
 
-The pane manager is auto-detected at startup. If none of the above are found, pi-slice will log a warning and the tools won't be registered.
+Auto-detected at startup. If none are found, the tools won't register.
 
 ## License
 
