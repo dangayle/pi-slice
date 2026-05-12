@@ -4,7 +4,7 @@ A [pi](https://github.com/mariozechner/pi-coding-agent) package that auto-splits
 
 If you're like me, you're always splitting your iTerm window vertically to run `vite dev` or `next dev` with HMR while working in pi. pi-slice does that automatically and gives the agent tools to interact with it.
 
-Supports **tmux**, **zellij**, and **iTerm2**.
+Supports **tmux**, **zellij**, **iTerm2**, and **Ghostty**.
 
 ## What it does
 
@@ -39,6 +39,7 @@ You can also control it manually:
 | **tmux** | `split-window`, `send-keys`, `capture-pane` |
 | **zellij** | `action new-pane`, `action write`, `action dump-screen` |
 | **iTerm2** | AppleScript (`split vertically with default profile`) |
+| **Ghostty** | Native AppleScript API (`split`, `input text`, `write_screen_file`) |
 
 Auto-detected at startup. If none are found, the tools won't register.
 

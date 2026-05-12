@@ -2,7 +2,7 @@
 
 export interface PaneManager {
   /** Which backend is active. */
-  readonly kind: "tmux" | "iterm" | "zellij";
+  readonly kind: "tmux" | "iterm" | "zellij" | "ghostty";
 
   /** Get the current pane/session ID (where pi is running). */
   getCurrentPaneId(): string;
@@ -38,6 +38,14 @@ export function isInZellij(): boolean {
   return !!process.env.ZELLIJ;
 }
 
+export function isInGhostty(): boolean {
+  if (process.env.TMUX || process.env.ZELLIJ) return false;
+  return (
+    process.env.TERM_PROGRAM === "ghostty" ||
+    !!process.env.GHOSTTY_RESOURCES_DIR
+  );
+}
+
 export function isInITerm(): boolean {
   if (process.env.TMUX || process.env.ZELLIJ) return false;
   return !!(
@@ -62,6 +70,10 @@ export function detectPaneManager(): PaneManager | null {
   if (isInZellij()) {
     const { zellijManager } = req("./zellij.js");
     return zellijManager;
+  }
+  if (isInGhostty()) {
+    const { ghosttyManager } = req("./ghostty.js");
+    return ghosttyManager;
   }
   if (isInITerm()) {
     const { itermManager } = req("./iterm.js");

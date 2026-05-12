@@ -15,7 +15,7 @@ export default function (pi: ExtensionAPI) {
 
   function doSplit(cwd: string): { ok: true } | { ok: false; reason: string } {
     if (!paneManager) {
-      return { ok: false, reason: "No supported terminal detected (need tmux, zellij, or iTerm2)." };
+      return { ok: false, reason: "No supported terminal detected (need tmux, zellij, iTerm2, or Ghostty)." };
     }
     if (companionPaneId && paneManager.isAlive(companionPaneId)) {
       return { ok: false, reason: "Companion pane already exists." };

@@ -1,7 +1,7 @@
 {
   "name": "pi-slice",
   "version": "0.1.0",
-  "description": "Auto-split terminal on pi start with pane read/write control. Supports tmux, zellij, and iTerm2.",
+  "description": "Auto-split terminal on pi start with pane read/write control. Supports tmux, zellij, iTerm2, and Ghostty.",
   "keywords": ["pi-package"],
   "author": "dangayle",
   "license": "MIT",
