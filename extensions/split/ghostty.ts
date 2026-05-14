@@ -26,11 +26,26 @@ function appleEscape(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+/**
+ * The origin terminal ID — captured once at startup when pi IS the focused
+ * terminal, then reused for all subsequent operations so we always target
+ * the correct tab even if the user switches focus.
+ *
+ * Subagents inherit PI_SLICE_ORIGIN_PANE via env, so they never need to
+ * call getCurrentPaneId() (which would resolve to the wrong terminal).
+ */
+let originTerminalId: string | null = process.env.PI_SLICE_ORIGIN_PANE || null;
+
 export const ghosttyManager: PaneManager = {
   kind: "ghostty",
 
   getCurrentPaneId(): string {
-    return osascript(`
+    // If we already know our origin terminal (from a previous call or
+    // inherited from a parent pi process), return it directly.
+    if (originTerminalId) return originTerminalId;
+
+    // First call — pi is the focused terminal right now, so this is safe.
+    const id = osascript(`
 tell application "Ghostty"
   tell front window
     tell selected tab
@@ -38,37 +53,36 @@ tell application "Ghostty"
     end tell
   end tell
 end tell`);
+
+    // Cache it and export to env so subagents inherit it.
+    originTerminalId = id;
+    process.env.PI_SLICE_ORIGIN_PANE = id;
+    return id;
   },
 
   splitVertical(cwd?: string): string {
+    // Always split the origin terminal (where pi is running), not whatever
+    // happens to be focused right now.
+    const sourceId = originTerminalId || this.getCurrentPaneId();
+    const safeSourceId = appleEscape(sourceId);
+
     if (cwd) {
-      // Use surface configuration with initial working directory
       const safeCwd = appleEscape(cwd);
       return osascript(`
 tell application "Ghostty"
   set cfg to new surface configuration
-  tell front window
-    tell selected tab
-      set currentTerm to focused terminal
-      set newTerm to split currentTerm direction right with configuration cfg
-      -- cd to desired directory via input since surface config
-      -- working directory requires record-literal syntax
-      input text "cd ${safeCwd}" & return to newTerm
-      return id of newTerm
-    end tell
-  end tell
+  set currentTerm to first terminal whose id is "${safeSourceId}"
+  set newTerm to split currentTerm direction right with configuration cfg
+  input text "cd ${safeCwd}" & return to newTerm
+  return id of newTerm
 end tell`);
     }
 
     return osascript(`
 tell application "Ghostty"
-  tell front window
-    tell selected tab
-      set currentTerm to focused terminal
-      set newTerm to split currentTerm direction right
-      return id of newTerm
-    end tell
-  end tell
+  set currentTerm to first terminal whose id is "${safeSourceId}"
+  set newTerm to split currentTerm direction right
+  return id of newTerm
 end tell`);
   },
 

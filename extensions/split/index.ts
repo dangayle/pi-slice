@@ -1,13 +1,70 @@
 // extensions/split/index.ts
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { detectPaneManager, type PaneManager } from "./pane-manager.js";
+
+// ---------------------------------------------------------------------------
+// File-based lock so only one companion pane is created across all pi
+// processes (root + subagents) within the same terminal session.
+// ---------------------------------------------------------------------------
+
+const LOCK_DIR = join(tmpdir(), "pi-slice");
+
+function lockFilePath(manager: PaneManager): string {
+  // Key the lock to the terminal session so different tmux/zellij sessions
+  // can each have their own companion pane.
+  let sessionKey = "default";
+  if (manager.kind === "tmux" && process.env.TMUX) {
+    // TMUX env looks like "/tmp/tmux-501/default,12345,0" — use the socket path + server pid
+    sessionKey = process.env.TMUX.replace(/[^a-zA-Z0-9]/g, "_");
+  } else if (manager.kind === "zellij" && process.env.ZELLIJ_SESSION_NAME) {
+    sessionKey = process.env.ZELLIJ_SESSION_NAME;
+  } else if (manager.kind === "iterm" && process.env.ITERM_SESSION_ID) {
+    // Use just the window/tab portion, not the pane-specific part
+    sessionKey = process.env.ITERM_SESSION_ID.split(":").slice(0, 2).join("_");
+  } else if (manager.kind === "ghostty") {
+    // Use the origin terminal ID so each tab gets its own lock.
+    // Falls back to env var (subagents inherit it) or a generic key.
+    sessionKey = process.env.PI_SLICE_ORIGIN_PANE || "ghostty";
+  }
+  return join(LOCK_DIR, `companion-${manager.kind}-${sessionKey}.lock`);
+}
+
+function readLockFile(path: string): string | null {
+  try {
+    if (!existsSync(path)) return null;
+    return readFileSync(path, "utf-8").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLockFile(path: string, paneId: string): void {
+  try {
+    mkdirSync(LOCK_DIR, { recursive: true });
+    writeFileSync(path, paneId, "utf-8");
+  } catch {
+    // best-effort
+  }
+}
+
+function removeLockFile(path: string): void {
+  try {
+    unlinkSync(path);
+  } catch {
+    // already gone
+  }
+}
 
 export default function (pi: ExtensionAPI) {
   const paneManager: PaneManager | null = detectPaneManager();
 
   let piPaneId: string | null = null;
   let companionPaneId: string | null = null;
+  let isOwner = false; // true only for the process that created the pane
 
   // -------------------------------------------------------------------------
   // Core split logic
@@ -37,17 +94,48 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     if (!paneManager) return;
+
+    // For Ghostty: eagerly resolve the origin terminal ID while we're
+    // still the focused terminal (before the user switches tabs).
+    piPaneId = paneManager.getCurrentPaneId();
+
+    // Fast path for subagents: if the parent already set the companion
+    // pane ID in the environment, just reuse it.
+    const envCompanion = process.env.PI_SLICE_COMPANION_PANE;
+    if (envCompanion && paneManager.isAlive(envCompanion)) {
+      companionPaneId = envCompanion;
+      isOwner = false;
+      return;
+    }
+
+    const lockPath = lockFilePath(paneManager);
+
+    // Check if another pi process already owns a live companion pane.
+    const existingPaneId = readLockFile(lockPath);
+    if (existingPaneId && paneManager.isAlive(existingPaneId)) {
+      // Reuse the existing pane — don't split a new one.
+      companionPaneId = existingPaneId;
+      isOwner = false;
+      return;
+    }
+
     if (companionPaneId && paneManager.isAlive(companionPaneId)) return;
 
     const result = doSplit(ctx.cwd);
     if (result.ok) {
+      isOwner = true;
+      writeLockFile(lockPath, companionPaneId!);
+      // Export companion pane ID so subagents inherit it directly.
+      process.env.PI_SLICE_COMPANION_PANE = companionPaneId!;
       ctx.ui.notify("🪟 Companion pane opened", "info");
     }
   });
 
   pi.on("session_shutdown", async () => {
-    if (paneManager && companionPaneId && paneManager.isAlive(companionPaneId)) {
+    // Only the process that created the pane should close it.
+    if (paneManager && companionPaneId && isOwner && paneManager.isAlive(companionPaneId)) {
       paneManager.close(companionPaneId);
+      removeLockFile(lockFilePath(paneManager));
       companionPaneId = null;
     }
   });
