@@ -10,9 +10,12 @@ export interface PaneManager {
   /**
    * Split the current pane vertically (new pane to the right).
    * Optionally start in the given cwd.
+   * When `sourcePaneId` is provided, the split targets that specific pane
+   * instead of whichever pane/tab happens to be focused — critical when the
+   * user switches tabs between session start and the split executing.
    * Returns the new pane's ID.
    */
-  splitVertical(cwd?: string): string;
+  splitVertical(cwd?: string, sourcePaneId?: string): string;
 
   /** Capture the last N lines of content from a pane. */
   captureContent(paneId: string, lines: number): string | null;

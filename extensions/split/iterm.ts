@@ -70,7 +70,7 @@ tell application "iTerm2"
 end tell`);
   },
 
-  splitVertical(cwd?: string): string {
+  splitVertical(cwd?: string, sourcePaneId?: string): string {
     let cmdPart = "";
     if (cwd) {
       // Escape single quotes for the inner bash -c argument
@@ -80,6 +80,36 @@ end tell`);
       cmdPart = `command "${appleEscape(bashCmd)}"`;
     }
 
+    // When we have a specific session ID, find it by UUID and split it.
+    // This avoids targeting the wrong tab if the user switched focus
+    // between session start and now.
+    if (sourcePaneId) {
+      const safeId = appleEscape(sourcePaneId);
+      return osascript(`
+tell application "iTerm2"
+  repeat with w in windows
+    tell w
+      repeat with t in tabs
+        tell t
+          repeat with s in sessions
+            tell s
+              if unique ID is "${safeId}" then
+                set newSession to (split vertically with default profile ${cmdPart})
+                tell newSession
+                  set name to "shell"
+                  return unique ID
+                end tell
+              end if
+            end tell
+          end repeat
+        end tell
+      end repeat
+    end tell
+  end repeat
+end tell`);
+    }
+
+    // Fallback: use current session (e.g. manual /split when user is focused)
     return osascript(`
 tell application "iTerm2"
   tell current window

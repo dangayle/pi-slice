@@ -18,9 +18,12 @@ export const tmuxManager: PaneManager = {
     return tmux("display-message -p '#{pane_id}'");
   },
 
-  splitVertical(cwd?: string): string {
+  splitVertical(cwd?: string, sourcePaneId?: string): string {
     const cdFlag = cwd ? `-c ${shellEscape(cwd)}` : "";
-    return tmux(`split-window -h -d -l 50% ${cdFlag} -P -F '#{pane_id}'`);
+    // Target the specific pane so the split happens in the right window/tab
+    // even if the user switched focus.
+    const targetFlag = sourcePaneId ? `-t ${sourcePaneId}` : "";
+    return tmux(`split-window -h -d -l 50% ${targetFlag} ${cdFlag} -P -F '#{pane_id}'`);
   },
 
   captureContent(paneId: string, lines: number): string | null {

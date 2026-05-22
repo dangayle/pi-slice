@@ -21,7 +21,7 @@ export const zellijManager: PaneManager = {
     return "focused";
   },
 
-  splitVertical(cwd?: string): string {
+  splitVertical(cwd?: string, _sourcePaneId?: string): string {
     const cdArg = cwd ? `--cwd ${shellEscape(cwd)}` : "";
     // Open a new pane to the right
     zellij(`action new-pane --direction right ${cdArg}`);

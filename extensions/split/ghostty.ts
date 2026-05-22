@@ -60,7 +60,7 @@ end tell`);
     return id;
   },
 
-  splitVertical(cwd?: string): string {
+  splitVertical(cwd?: string, _sourcePaneId?: string): string {
     // Always split the origin terminal (where pi is running), not whatever
     // happens to be focused right now.
     const sourceId = originTerminalId || this.getCurrentPaneId();

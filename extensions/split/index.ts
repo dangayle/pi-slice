@@ -79,7 +79,7 @@ export default function (pi: ExtensionAPI) {
     }
     try {
       piPaneId = paneManager.getCurrentPaneId();
-      companionPaneId = paneManager.splitVertical(cwd);
+      companionPaneId = paneManager.splitVertical(cwd, piPaneId);
       paneManager.focus(piPaneId);
       return { ok: true };
     } catch (err) {
